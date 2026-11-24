@@ -1,0 +1,620 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Shader documentation for Nikita Engine: the shader editor, the shading language, built-in variables and worked examples.">
+<meta name="color-scheme" content="dark">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cpath fill='%238b5cf6' d='M12 52V12h9l22 27V12h9v40h-9L21 25v27z'/%3E%3C/svg%3E">
+<title>Shaders</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;700;800;900&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+
+<style>
+	:root {
+		--ground: #05040a;
+		--ground-2: #0a0812;
+		--surface: #12101d;
+		--line: #241f38;
+		--line-soft: #1a1729;
+		--ink: #edeaf6;
+		--ink-2: #9d97b6;
+		--ink-3: #6c6688;
+		--hot: #8b5cf6;
+		--hot-soft: #a78bfa;
+
+		--display: "Archivo", "Helvetica Neue", Arial, sans-serif;
+		--body: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+		--mono: "IBM Plex Mono", "SF Mono", Consolas, monospace;
+
+		--gut: clamp(20px, 4vw, 48px);
+		--rail: 250px;
+		--bar: 62px;
+	}
+
+	* { box-sizing: border-box; }
+
+	body {
+		margin: 0;
+		background: var(--ground);
+		color: var(--ink);
+		font-family: var(--body);
+		font-size: 16.5px;
+		line-height: 1.7;
+		-webkit-font-smoothing: antialiased;
+	}
+
+	h1, h2, h3 {
+		font-family: var(--display);
+		font-weight: 800;
+		letter-spacing: -0.03em;
+		text-wrap: balance;
+		margin: 0;
+		line-height: 1.15;
+	}
+
+	p { margin: 0; }
+	a { color: var(--hot-soft); }
+	:focus-visible { outline: 2px solid var(--hot-soft); outline-offset: 3px; }
+
+	.masthead {
+		position: fixed;
+		inset: 0 0 auto 0;
+		z-index: 30;
+		height: var(--bar);
+		display: flex;
+		align-items: center;
+		gap: 28px;
+		padding-inline: var(--gut);
+		backdrop-filter: blur(14px);
+		background: color-mix(in srgb, var(--ground) 82%, transparent);
+		border-bottom: 1px solid var(--line-soft);
+	}
+
+	.brand {
+		display: flex;
+		align-items: center;
+		gap: 11px;
+		text-decoration: none;
+		color: var(--ink);
+		margin-right: auto;
+	}
+
+	.mark { width: 26px; height: 26px; display: block; }
+	.mark path { fill: var(--hot); }
+	.wordmark { font-family: var(--display); font-weight: 800; font-size: 17px; letter-spacing: -0.02em; }
+
+	.navlinks { display: flex; gap: 24px; }
+
+	.navlinks a {
+		text-decoration: none;
+		font-size: 14.5px;
+		color: var(--ink-2);
+		transition: color .18s ease;
+	}
+
+	.navlinks a:hover { color: var(--ink); }
+	.navlinks a[aria-current] { color: var(--hot-soft); }
+
+	.shell {
+		display: grid;
+		grid-template-columns: var(--rail) minmax(0, 1fr);
+		gap: clamp(28px, 5vw, 64px);
+		max-width: 1180px;
+		margin-inline: auto;
+		padding: calc(var(--bar) + 48px) var(--gut) 96px;
+	}
+
+	.rail nav {
+		position: sticky;
+		top: calc(var(--bar) + 32px);
+		display: flex;
+		flex-direction: column;
+		gap: 3px;
+		max-height: calc(100vh - var(--bar) - 64px);
+		overflow-y: auto;
+	}
+
+	.rail strong {
+		font-family: var(--mono);
+		font-size: 11px;
+		font-weight: 500;
+		letter-spacing: 0.16em;
+		text-transform: uppercase;
+		color: var(--ink-3);
+		margin-top: 22px;
+		margin-bottom: 6px;
+	}
+
+	.rail strong:first-child { margin-top: 0; }
+
+	.rail a {
+		text-decoration: none;
+		color: var(--ink-2);
+		font-size: 14.5px;
+		padding: 3px 0 3px 12px;
+		border-left: 2px solid var(--line-soft);
+		transition: color .16s ease, border-color .16s ease;
+	}
+
+	.rail a:hover { color: var(--ink); border-left-color: var(--hot); }
+
+	@media (max-width: 900px) {
+		.shell { grid-template-columns: minmax(0, 1fr); }
+		.rail nav { position: static; max-height: none; }
+	}
+
+	article { display: flex; flex-direction: column; gap: 18px; min-width: 0; }
+	article > h1 { font-size: clamp(2.2rem, 5vw, 3.1rem); font-weight: 900; letter-spacing: -0.04em; }
+
+	.subtitle { color: var(--ink-2); font-size: 1.08rem; max-width: 62ch; }
+
+	section { display: flex; flex-direction: column; gap: 16px; scroll-margin-top: calc(var(--bar) + 24px); }
+	section + section { margin-top: 46px; }
+
+	section > h2 {
+		font-size: 1.72rem;
+		padding-bottom: 12px;
+		border-bottom: 1px solid var(--line-soft);
+	}
+
+	section > h3 { font-size: 1.16rem; font-weight: 700; margin-top: 14px; }
+
+	article p { max-width: 68ch; color: var(--ink); }
+	article p.note { color: var(--ink-2); font-size: 15.5px; }
+
+	code {
+		font-family: var(--mono);
+		font-size: .9em;
+		color: var(--hot-soft);
+		background: var(--surface);
+		border: 1px solid var(--line-soft);
+		border-radius: 3px;
+		padding: 1px 5px;
+	}
+
+	pre {
+		margin: 0;
+		background: var(--surface);
+		border: 1px solid var(--line);
+		border-radius: 4px;
+		padding: 18px 20px;
+		overflow-x: auto;
+		font-family: var(--mono);
+		font-size: 13.6px;
+		line-height: 1.8;
+		tab-size: 4;
+	}
+
+	pre code { background: none; border: 0; padding: 0; font-size: inherit; color: var(--ink); }
+
+	.k  { color: var(--hot-soft); font-weight: 500; }
+	.ty { color: #c9b8ff; }
+	.bi { color: #f0b866; }
+	.fnc{ color: #7dd3fc; }
+	.nu { color: #f0b866; }
+	.st { color: #a3e6a0; }
+	.cm { color: var(--ink-3); font-style: italic; }
+
+	.callout {
+		border: 1px solid var(--line);
+		border-left: 2px solid var(--hot);
+		background: var(--ground-2);
+		border-radius: 3px;
+		padding: 16px 20px;
+		color: var(--ink-2);
+		font-size: 15.5px;
+		max-width: 68ch;
+	}
+
+	.callout b { color: var(--ink); font-weight: 600; }
+
+	.scroller { overflow-x: auto; }
+	table { width: 100%; border-collapse: collapse; font-size: 15px; }
+
+	th {
+		text-align: left;
+		font-family: var(--mono);
+		font-size: 11px;
+		letter-spacing: 0.16em;
+		text-transform: uppercase;
+		color: var(--ink-3);
+		font-weight: 400;
+		padding: 0 18px 10px 0;
+		border-bottom: 1px solid var(--line);
+		white-space: nowrap;
+	}
+
+	td {
+		padding: 10px 18px 10px 0;
+		border-bottom: 1px solid var(--line-soft);
+		color: var(--ink-2);
+		vertical-align: top;
+	}
+
+	td:first-child { font-family: var(--mono); color: var(--hot-soft); white-space: nowrap; }
+
+	.steps { counter-reset: step; display: flex; flex-direction: column; gap: 16px; }
+	.step { display: flex; gap: 14px; align-items: flex-start; max-width: 68ch; }
+
+	.step::before {
+		counter-increment: step;
+		content: counter(step);
+		flex: none;
+		width: 24px;
+		height: 24px;
+		margin-top: 3px;
+		border-radius: 50%;
+		border: 1px solid var(--line);
+		background: var(--surface);
+		color: var(--hot-soft);
+		font-family: var(--mono);
+		font-size: 12px;
+		display: grid;
+		place-items: center;
+	}
+
+	footer {
+		border-top: 1px solid var(--line-soft);
+		background: var(--ground-2);
+		padding: 40px var(--gut) 52px;
+		color: var(--ink-3);
+		font-size: 14px;
+	}
+
+	footer div { max-width: 1180px; margin-inline: auto; }
+
+	@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+</head>
+<body>
+
+<header class="masthead">
+	<a class="brand" href="index.html">
+		<svg class="mark" viewBox="0 0 64 64" aria-hidden="true"><path d="M12 52V12h9l22 27V12h9v40h-9L21 25v27z"/></svg>
+		<span class="wordmark">Nikita Engine</span>
+	</a>
+	<nav class="navlinks">
+		<a href="index.html">Home</a>
+		<a href="docs.html">NikaScript</a>
+		<a href="shaders.html" aria-current="page">Shaders</a>
+	</nav>
+</header>
+
+<div class="shell">
+	<div class="rail">
+		<nav>
+			<strong>Start here</strong>
+			<a href="#what">What a shader is</a>
+			<a href="#editor">The shader editor</a>
+			<a href="#anatomy">Anatomy of a shader</a>
+			<strong>Language</strong>
+			<a href="#types">Shader types</a>
+			<a href="#uniforms">Uniforms</a>
+			<a href="#render-mode">render_mode</a>
+			<a href="#from-code">Driving it from code</a>
+			<strong>Examples</strong>
+			<a href="#ex-scroll">Scrolling texture</a>
+			<a href="#ex-outline">Outline</a>
+			<a href="#ex-rim">Rim light</a>
+			<a href="#ex-dissolve">Dissolve</a>
+			<a href="#ex-wave">Waves</a>
+			<strong>Reference</strong>
+			<a href="#builtins-2d">2D built-ins</a>
+			<a href="#builtins-3d">3D built-ins</a>
+		</nav>
+	</div>
+
+	<article>
+		<h1>Shaders</h1>
+		<p class="subtitle">A shader is a small program the graphics card runs for every vertex and every pixel it draws. It is where the look of a game is decided, and it is the fastest code you will ever write.</p>
+
+		<section id="what">
+			<h2>What a shader is</h2>
+			<p>Everything on screen is drawn by a shader — the engine ships defaults you never see. Writing your own replaces the default for one material, and nothing else changes.</p>
+			<p>A shader runs in two stages. <b>Vertex</b> runs once per corner of a mesh and can move geometry around. <b>Fragment</b> runs once per pixel that ends up covered and decides what colour it is. Both run for millions of items at once, which is why they are fast and why they cannot see each other's results.</p>
+			<div class="callout"><b>The language is not NikaScript.</b> Shaders are written in a C-like language that compiles to GPU code: braces, semicolons, and types declared before names. Everything on this page uses that language. Shader files carry the <code>.nikashader</code> extension.</div>
+		</section>
+
+		<section id="editor">
+			<h2>The shader editor</h2>
+			<p>The editor lives at the bottom of the window, beside the script editor. The quickest way to open it is to give a node a shader material.</p>
+			<div class="steps">
+				<div class="step"><p>Select a node that draws something — a <code>Sprite2D</code>, a <code>MeshInstance3D</code>, a <code>ColorRect</code>.</p></div>
+				<div class="step"><p>In the Inspector find <b>Material</b> (for 3D, <b>Surface Material Override → 0</b>) and choose <b>New ShaderMaterial</b>.</p></div>
+				<div class="step"><p>Click the material, then on its <b>Shader</b> property choose <b>New Shader</b>. Pick the mode — <b>CanvasItem</b> for 2D, <b>Spatial</b> for 3D — and give it a name.</p></div>
+				<div class="step"><p>The shader editor opens with a starting file. Edit it and the result appears in the viewport as you type; there is no compile step and nothing to press.</p></div>
+			</div>
+			<h3>What the panel gives you</h3>
+			<p>Errors appear underlined in the code and spelled out at the bottom, with the line number. A shader that fails to compile leaves the last working version on screen, so a typo never blanks your scene.</p>
+			<p>Uniforms you declare show up in the Inspector under the material as soon as you save, with sliders and colour pickers where the hint asks for them. That is the fastest way to find good values: write the uniform, then drag.</p>
+			<h3>Shaders as files</h3>
+			<p>A shader made this way lives inside the scene. To reuse it, save it as a file: on the Shader property choose <b>Save As</b>, or create one up front in the FileSystem dock with <b>right-click → Create New → Shader</b>. Files end in <code>.nikashader</code>, are plain text, and read well in a diff.</p>
+			<h3>The node graph</h3>
+			<p>If code is not how you want to work, choose <b>New VisualShader</b> instead of New Shader. It opens a node graph where the same operations are boxes you wire together, and it produces the same GPU program. The two are not interchangeable per file: a shader is either text or a graph.</p>
+		</section>
+
+		<section id="anatomy">
+			<h2>Anatomy of a shader</h2>
+			<p>The shortest useful one, in full:</p>
+<pre><code><span class="k">shader_type</span> canvas_item;
+
+<span class="k">uniform</span> <span class="ty">vec4</span> tint : <span class="k">source_color</span> = <span class="ty">vec4</span>(<span class="nu">1.0</span>);
+
+<span class="k">void</span> <span class="fnc">fragment</span>() {
+	<span class="bi">COLOR</span> = <span class="fnc">texture</span>(<span class="bi">TEXTURE</span>, <span class="bi">UV</span>) * tint;
+}
+</code></pre>
+			<p>Four things are worth naming.</p>
+			<div class="scroller">
+				<table>
+					<thead><tr><th>Part</th><th>What it does</th></tr></thead>
+					<tbody>
+						<tr><td>shader_type</td><td>Must be the very first line. It decides which built-ins and functions exist.</td></tr>
+						<tr><td>uniform</td><td>A value from outside — the Inspector or your code. Constant for the whole draw.</td></tr>
+						<tr><td>fragment()</td><td>Runs per pixel. <code>vertex()</code> and <code>light()</code> are the other two entry points.</td></tr>
+						<tr><td>UPPERCASE</td><td>Built-ins. Some are inputs you read, some are outputs you write, a few are both.</td></tr>
+					</tbody>
+				</table>
+			</div>
+			<p class="note">Types are the usual GPU set: <code>float</code>, <code>int</code>, <code>bool</code>, <code>vec2</code>, <code>vec3</code>, <code>vec4</code>, <code>mat2</code>–<code>mat4</code>, and <code>sampler2D</code> for textures. There is no implicit conversion, so <code>1</code> and <code>1.0</code> are not the same thing and mixing them is an error.</p>
+		</section>
+
+		<section id="types">
+			<h2>Shader types</h2>
+			<p>The first line picks one of six. Most work uses the first two.</p>
+			<div class="scroller">
+				<table>
+					<thead><tr><th>shader_type</th><th>Draws</th></tr></thead>
+					<tbody>
+						<tr><td>canvas_item</td><td>Everything 2D: sprites, controls, tilemaps. The default for a new 2D material.</td></tr>
+						<tr><td>spatial</td><td>Everything 3D: meshes, and the material properties that feed lighting.</td></tr>
+						<tr><td>particles</td><td>Moves particles on the GPU. Writes positions and velocities, not colour.</td></tr>
+						<tr><td>sky</td><td>The background of a 3D scene, evaluated per direction rather than per pixel of a surface.</td></tr>
+						<tr><td>fog</td><td>Density and colour inside a FogVolume.</td></tr>
+						<tr><td>texture_blit</td><td>Copies one texture to another. Rarely written by hand.</td></tr>
+					</tbody>
+				</table>
+			</div>
+		</section>
+
+		<section id="uniforms">
+			<h2>Uniforms</h2>
+			<p>A uniform is a knob. Declare it, and it appears in the Inspector under the material.</p>
+<pre><code><span class="k">uniform</span> <span class="ty">float</span> strength : <span class="k">hint_range</span>(<span class="nu">0.0</span>, <span class="nu">1.0</span>) = <span class="nu">0.5</span>;
+<span class="k">uniform</span> <span class="ty">vec4</span> glow : <span class="k">source_color</span> = <span class="ty">vec4</span>(<span class="nu">1.0</span>, <span class="nu">0.4</span>, <span class="nu">0.1</span>, <span class="nu">1.0</span>);
+<span class="k">uniform</span> <span class="ty">sampler2D</span> mask : <span class="k">hint_default_white</span>;
+<span class="k">uniform</span> <span class="ty">sampler2D</span> bumps : <span class="k">hint_normal</span>;
+</code></pre>
+			<p>The part after the colon is a hint. It changes how the value is presented and, for colours, how it is interpreted.</p>
+			<div class="scroller">
+				<table>
+					<thead><tr><th>Hint</th><th>Effect</th></tr></thead>
+					<tbody>
+						<tr><td>source_color</td><td>Shows a colour picker and converts from sRGB. Use it on every colour, or your colours come out wrong.</td></tr>
+						<tr><td>hint_range(min, max)</td><td>A slider instead of a number field. A third argument sets the step.</td></tr>
+						<tr><td>hint_default_white</td><td>An unset texture reads as white rather than black — the right default for a multiplier.</td></tr>
+						<tr><td>hint_default_black</td><td>The opposite, for something added on top.</td></tr>
+						<tr><td>hint_normal</td><td>Marks the texture as a normal map.</td></tr>
+						<tr><td>filter_nearest</td><td>No smoothing between texels. The one you want for pixel art.</td></tr>
+						<tr><td>repeat_disable</td><td>Clamps at the edges instead of tiling.</td></tr>
+					</tbody>
+				</table>
+			</div>
+			<div class="callout"><b><code>source_color</code> is not decoration.</b> Colours picked in the Inspector are sRGB, while the shader works in linear space. Without the hint the engine hands the value over unconverted and everything looks washed out or too dark, in a way that is easy to blame on the lighting instead.</div>
+		</section>
+
+		<section id="render-mode">
+			<h2>render_mode</h2>
+			<p>One optional line, straight after <code>shader_type</code>, that changes how the surface is drawn rather than what colour it is.</p>
+<pre><code><span class="k">shader_type</span> spatial;
+<span class="k">render_mode</span> unshaded, cull_disabled, blend_add;
+</code></pre>
+			<div class="scroller">
+				<table>
+					<thead><tr><th>Mode</th><th>Effect</th></tr></thead>
+					<tbody>
+						<tr><td>unshaded</td><td>Ignore lights entirely; <code>ALBEDO</code> goes straight to the screen. Right for UI, holograms and effects.</td></tr>
+						<tr><td>cull_disabled</td><td>Draw both sides of every face. Needed for flat things like leaves and cloth.</td></tr>
+						<tr><td>cull_front</td><td>Draw only back faces. The old trick for outlines built from an inflated hull.</td></tr>
+						<tr><td>blend_add</td><td>Add to what is behind instead of covering it. Fire, sparks, glow.</td></tr>
+						<tr><td>blend_mix</td><td>The normal alpha blend, and the default.</td></tr>
+						<tr><td>depth_draw_never</td><td>Do not write depth. Usual for transparent surfaces that overlap each other.</td></tr>
+						<tr><td>shadows_disabled</td><td>The surface casts no shadow.</td></tr>
+						<tr><td>vertex_lighting</td><td>Light per vertex instead of per pixel. Cheaper, and deliberately retro.</td></tr>
+					</tbody>
+				</table>
+			</div>
+			<p class="note">Spatial shaders accept 23 modes in total and canvas_item accepts 5; the ones above are the ones that come up. Modes are comma-separated on a single line.</p>
+		</section>
+
+		<section id="from-code">
+			<h2>Driving it from code</h2>
+			<p>Uniforms are readable and writable from NikaScript, which is how effects get animated or tied to gameplay.</p>
+<pre><code><span class="k">from</span> <span class="ty">Node3D</span>
+
+<span class="k">let</span> material := <span class="ty">ShaderMaterial</span>.<span class="fnc">new</span>()
+
+<span class="k">fn</span> <span class="fnc">_ready</span>():
+	material.shader = <span class="fnc">load</span>(<span class="st">"res://water.nikashader"</span>)
+	material.<span class="fnc">set_shader_parameter</span>(<span class="st">"wave_height"</span>, <span class="nu">0.35</span>)
+	$MeshInstance3D.material_override = material
+
+<span class="k">fn</span> <span class="fnc">dissolve</span>() -&gt; <span class="k">void</span>:
+	<span class="k">for</span> i <span class="k">in</span> <span class="fnc">range</span>(<span class="nu">60</span>):
+		material.<span class="fnc">set_shader_parameter</span>(<span class="st">"amount"</span>, float(i) / <span class="nu">60.0</span>)
+		<span class="k">await</span> <span class="fnc">get_tree</span>().process_frame
+</code></pre>
+			<p>The name is the uniform's name as a string. A typo fails silently — the parameter simply does not exist — so check the spelling first when nothing happens.</p>
+			<p class="note">For a value that differs per object while the material is shared, declare it <code>instance</code> (<code>instance uniform vec4 tint;</code>) and set it with <code>set_instance_shader_parameter()</code> on the node. That avoids one material per object.</p>
+		</section>
+
+		<section id="ex-scroll">
+			<h2>Scrolling texture</h2>
+			<p>Moving the coordinate instead of the object. Good for water, conveyor belts, and skies on a 2D backdrop.</p>
+<pre><code><span class="k">shader_type</span> canvas_item;
+
+<span class="k">uniform</span> <span class="ty">vec4</span> tint : <span class="k">source_color</span> = <span class="ty">vec4</span>(<span class="nu">1.0</span>, <span class="nu">1.0</span>, <span class="nu">1.0</span>, <span class="nu">1.0</span>);
+<span class="k">uniform</span> <span class="ty">vec2</span> scroll = <span class="ty">vec2</span>(<span class="nu">0.1</span>, <span class="nu">0.0</span>);
+
+<span class="k">void</span> <span class="fnc">fragment</span>() {
+	<span class="ty">vec2</span> moving_uv = <span class="bi">UV</span> + scroll * <span class="bi">TIME</span>;
+	<span class="bi">COLOR</span> = <span class="fnc">texture</span>(<span class="bi">TEXTURE</span>, moving_uv) * tint;
+}
+</code></pre>
+			<p><code>TIME</code> counts seconds since the game started, so multiplying by it turns a direction into a speed. The texture must be set to repeat or the edge will smear — that is the texture's import setting, not the shader's job.</p>
+		</section>
+
+		<section id="ex-outline">
+			<h2>Outline</h2>
+			<p>Draws a border around whatever is opaque in a sprite, by asking the four neighbouring pixels whether anything is there.</p>
+<pre><code><span class="k">shader_type</span> canvas_item;
+
+<span class="k">uniform</span> <span class="ty">vec4</span> line_color : <span class="k">source_color</span> = <span class="ty">vec4</span>(<span class="nu">0.0</span>, <span class="nu">0.0</span>, <span class="nu">0.0</span>, <span class="nu">1.0</span>);
+<span class="k">uniform</span> <span class="ty">float</span> thickness : <span class="k">hint_range</span>(<span class="nu">0.0</span>, <span class="nu">8.0</span>) = <span class="nu">2.0</span>;
+
+<span class="k">void</span> <span class="fnc">fragment</span>() {
+	<span class="ty">vec4</span> base = <span class="fnc">texture</span>(<span class="bi">TEXTURE</span>, <span class="bi">UV</span>);
+	<span class="k">if</span> (base.a &gt; <span class="nu">0.0</span>) {
+		<span class="bi">COLOR</span> = base;
+	} <span class="k">else</span> {
+		<span class="ty">vec2</span> offset = <span class="bi">TEXTURE_PIXEL_SIZE</span> * thickness;
+		<span class="ty">float</span> around =
+			<span class="fnc">texture</span>(<span class="bi">TEXTURE</span>, <span class="bi">UV</span> + <span class="ty">vec2</span>(offset.x, <span class="nu">0.0</span>)).a +
+			<span class="fnc">texture</span>(<span class="bi">TEXTURE</span>, <span class="bi">UV</span> - <span class="ty">vec2</span>(offset.x, <span class="nu">0.0</span>)).a +
+			<span class="fnc">texture</span>(<span class="bi">TEXTURE</span>, <span class="bi">UV</span> + <span class="ty">vec2</span>(<span class="nu">0.0</span>, offset.y)).a +
+			<span class="fnc">texture</span>(<span class="bi">TEXTURE</span>, <span class="bi">UV</span> - <span class="ty">vec2</span>(<span class="nu">0.0</span>, offset.y)).a;
+		<span class="bi">COLOR</span> = <span class="ty">vec4</span>(line_color.rgb, line_color.a * <span class="fnc">min</span>(around, <span class="nu">1.0</span>));
+	}
+}
+</code></pre>
+			<div class="callout"><b>The sprite needs room for the outline.</b> A shader can only colour pixels the sprite already covers, so a border drawn at the very edge of the texture has nowhere to go. Leave a few transparent pixels of margin in the image, or the outline appears on three sides.</div>
+		</section>
+
+		<section id="ex-rim">
+			<h2>Rim light</h2>
+			<p>Brightens the silhouette where a surface turns away from the camera. It reads as a highlight and separates an object from its background almost for free.</p>
+<pre><code><span class="k">shader_type</span> spatial;
+
+<span class="k">uniform</span> <span class="ty">vec4</span> base_color : <span class="k">source_color</span> = <span class="ty">vec4</span>(<span class="nu">0.15</span>, <span class="nu">0.15</span>, <span class="nu">0.20</span>, <span class="nu">1.0</span>);
+<span class="k">uniform</span> <span class="ty">vec4</span> rim_color : <span class="k">source_color</span> = <span class="ty">vec4</span>(<span class="nu">0.545</span>, <span class="nu">0.361</span>, <span class="nu">0.965</span>, <span class="nu">1.0</span>);
+<span class="k">uniform</span> <span class="ty">float</span> rim_power : <span class="k">hint_range</span>(<span class="nu">0.5</span>, <span class="nu">8.0</span>) = <span class="nu">3.0</span>;
+
+<span class="k">void</span> <span class="fnc">fragment</span>() {
+	<span class="bi">ALBEDO</span> = base_color.rgb;
+	<span class="ty">float</span> facing = <span class="fnc">clamp</span>(<span class="fnc">dot</span>(<span class="bi">NORMAL</span>, <span class="bi">VIEW</span>), <span class="nu">0.0</span>, <span class="nu">1.0</span>);
+	<span class="bi">EMISSION</span> = rim_color.rgb * <span class="fnc">pow</span>(<span class="nu">1.0</span> - facing, rim_power);
+}
+</code></pre>
+			<p><code>NORMAL</code> points out of the surface and <code>VIEW</code> points at the camera. Their dot product is 1 straight on and 0 at the edge, so <code>1.0 - facing</code> is the silhouette. The power controls how tightly the glow hugs it.</p>
+		</section>
+
+		<section id="ex-dissolve">
+			<h2>Dissolve</h2>
+			<p>Makes an object burn away, driven by a noise texture. Feed <code>amount</code> from 0 to 1 and it vanishes with a glowing edge.</p>
+<pre><code><span class="k">shader_type</span> spatial;
+
+<span class="k">uniform</span> <span class="ty">sampler2D</span> pattern : <span class="k">hint_default_white</span>;
+<span class="k">uniform</span> <span class="ty">float</span> amount : <span class="k">hint_range</span>(<span class="nu">0.0</span>, <span class="nu">1.0</span>) = <span class="nu">0.5</span>;
+<span class="k">uniform</span> <span class="ty">vec4</span> edge_color : <span class="k">source_color</span> = <span class="ty">vec4</span>(<span class="nu">1.0</span>, <span class="nu">0.4</span>, <span class="nu">0.1</span>, <span class="nu">1.0</span>);
+<span class="k">uniform</span> <span class="ty">float</span> edge_width : <span class="k">hint_range</span>(<span class="nu">0.0</span>, <span class="nu">0.2</span>) = <span class="nu">0.05</span>;
+
+<span class="k">void</span> <span class="fnc">fragment</span>() {
+	<span class="ty">float</span> mask = <span class="fnc">texture</span>(pattern, <span class="bi">UV</span>).r;
+	<span class="k">if</span> (mask &lt; amount) {
+		<span class="k">discard</span>;
+	}
+	<span class="bi">ALBEDO</span> = <span class="ty">vec3</span>(<span class="nu">0.6</span>);
+	<span class="k">if</span> (mask &lt; amount + edge_width) {
+		<span class="bi">EMISSION</span> = edge_color.rgb * <span class="nu">3.0</span>;
+	}
+}
+</code></pre>
+			<p><code>discard</code> throws the pixel away entirely — not transparent, absent. For the <code>pattern</code> uniform, make a <code>NoiseTexture2D</code> in the Inspector; any greyscale image works.</p>
+			<p class="note">The glowing edge only reads as glowing with glow enabled on the environment. Without it, <code>EMISSION</code> above 1.0 just clips to white.</p>
+		</section>
+
+		<section id="ex-wave">
+			<h2>Waves</h2>
+			<p>The first four examples changed colour. This one moves geometry, which is what <code>vertex()</code> is for.</p>
+<pre><code><span class="k">shader_type</span> spatial;
+
+<span class="k">uniform</span> <span class="ty">float</span> wave_height = <span class="nu">0.2</span>;
+<span class="k">uniform</span> <span class="ty">float</span> wave_speed = <span class="nu">1.5</span>;
+<span class="k">uniform</span> <span class="ty">float</span> wave_length = <span class="nu">2.0</span>;
+
+<span class="k">void</span> <span class="fnc">vertex</span>() {
+	<span class="bi">VERTEX</span>.y += <span class="fnc">sin</span>(<span class="bi">VERTEX</span>.x / wave_length + <span class="bi">TIME</span> * wave_speed) * wave_height;
+}
+
+<span class="k">void</span> <span class="fnc">fragment</span>() {
+	<span class="bi">ALBEDO</span> = <span class="ty">vec3</span>(<span class="nu">0.15</span>, <span class="nu">0.40</span>, <span class="nu">0.70</span>);
+	<span class="bi">ROUGHNESS</span> = <span class="nu">0.1</span>;
+	<span class="bi">METALLIC</span> = <span class="nu">0.0</span>;
+}
+</code></pre>
+			<div class="callout"><b>A plane with four corners cannot wave.</b> Vertices are the only places the shader can move, so the effect is only as smooth as the mesh is dense. Raise the subdivision on the PlaneMesh until it looks right. This also means physics and collision do not follow — the shape the player collides with stays flat.</div>
+			<p class="note">Moving vertices leaves <code>NORMAL</code> pointing where it did before, so lighting will not follow the wave. Recomputing normals properly is more work than the wave itself; for gentle motion, nobody notices.</p>
+		</section>
+
+		<section id="builtins-2d">
+			<h2>2D built-ins</h2>
+			<p>The ones that come up in <code>canvas_item</code> shaders. Writable ones are marked.</p>
+			<div class="scroller">
+				<table>
+					<thead><tr><th>Name</th><th>Stage</th><th>Meaning</th></tr></thead>
+					<tbody>
+						<tr><td>COLOR</td><td>fragment · write</td><td>The pixel that ends up on screen. In <code>vertex()</code> it is the vertex colour instead.</td></tr>
+						<tr><td>UV</td><td>both</td><td>Position within the texture, 0 to 1.</td></tr>
+						<tr><td>TEXTURE</td><td>fragment</td><td>The node's own texture, ready to sample.</td></tr>
+						<tr><td>TEXTURE_PIXEL_SIZE</td><td>both</td><td>The size of one texel in UV units. Use it to step to a neighbour.</td></tr>
+						<tr><td>VERTEX</td><td>vertex · write</td><td>Position in local space. Move it to distort the sprite.</td></tr>
+						<tr><td>SCREEN_UV</td><td>fragment</td><td>Position on the screen rather than on the sprite.</td></tr>
+						<tr><td>POINT_COORD</td><td>fragment</td><td>Coordinate within a point primitive.</td></tr>
+						<tr><td>NORMAL, NORMAL_MAP</td><td>fragment</td><td>Surface direction for 2D lighting; write NORMAL_MAP to feed one from a texture.</td></tr>
+						<tr><td>SCREEN_PIXEL_SIZE</td><td>fragment</td><td>The size of one screen pixel in SCREEN_UV units.</td></tr>
+						<tr><td>AT_LIGHT_PASS</td><td>both</td><td>True while the object is being drawn for a light.</td></tr>
+						<tr><td>TIME</td><td>both</td><td>Seconds since the game started.</td></tr>
+					</tbody>
+				</table>
+			</div>
+		</section>
+
+		<section id="builtins-3d">
+			<h2>3D built-ins</h2>
+			<p>A <code>spatial</code> fragment shader has sixty-one built-ins. These are the ones you will actually reach for.</p>
+			<div class="scroller">
+				<table>
+					<thead><tr><th>Name</th><th>Stage</th><th>Meaning</th></tr></thead>
+					<tbody>
+						<tr><td>ALBEDO</td><td>fragment · write</td><td>Base colour before lighting. The main output.</td></tr>
+						<tr><td>ALPHA</td><td>fragment · write</td><td>Transparency. Writing it at all turns the material transparent.</td></tr>
+						<tr><td>METALLIC</td><td>fragment · write</td><td>0 for everything that is not metal, 1 for bare metal. Values between are rarely right.</td></tr>
+						<tr><td>ROUGHNESS</td><td>fragment · write</td><td>0 is a mirror, 1 is chalk.</td></tr>
+						<tr><td>EMISSION</td><td>fragment · write</td><td>Light the surface gives off. Unaffected by lamps.</td></tr>
+						<tr><td>NORMAL</td><td>fragment</td><td>Surface direction in view space.</td></tr>
+						<tr><td>NORMAL_MAP</td><td>fragment · write</td><td>Write a sampled normal map here and the engine handles the rest.</td></tr>
+						<tr><td>VIEW</td><td>fragment</td><td>Direction from the surface to the camera.</td></tr>
+						<tr><td>VERTEX</td><td>both · write</td><td>Position: local space in <code>vertex()</code>, view space in <code>fragment()</code>.</td></tr>
+						<tr><td>UV, UV2</td><td>both</td><td>Texture coordinates from the mesh.</td></tr>
+						<tr><td>AO</td><td>fragment · write</td><td>Baked occlusion, darkening creases.</td></tr>
+						<tr><td>RIM, RIM_TINT</td><td>fragment · write</td><td>Built-in rim lighting, if you would rather not compute it yourself.</td></tr>
+						<tr><td>SCREEN_UV</td><td>fragment</td><td>Where this pixel sits on screen.</td></tr>
+						<tr><td>FRONT_FACING</td><td>fragment</td><td>False on back faces. Useful with <code>cull_disabled</code>.</td></tr>
+						<tr><td>MODEL_MATRIX</td><td>both</td><td>Local space to world space, when an effect must be world-anchored.</td></tr>
+						<tr><td>TIME</td><td>both</td><td>Seconds since the game started.</td></tr>
+					</tbody>
+				</table>
+			</div>
+			<p class="note">Every example on this page was compiled by the engine before publishing, so what is printed here is what the shader compiler accepts.</p>
+		</section>
+	</article>
+</div>
+
+<footer>
+	<div>© 2026 Nikita Engine. Free to download and use, for any project, commercial or not.</div>
+</footer>
+
+</body>
+</html>
